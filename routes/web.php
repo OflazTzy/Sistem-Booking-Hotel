@@ -18,7 +18,7 @@ use App\Http\Controllers\UserController;
 // =============================================
 Route::get('/', [DashboardController::class, 'home'])->name('home');
 Route::get('/rooms', [RoomController::class, 'index'])->name('rooms.index');
-Route::get('/rooms/{room}', [RoomController::class, 'show'])->name('rooms.show');
+Route::get('/rooms/{room}', [RoomController::class, 'show'])->where('room', '[0-9]+')->name('rooms.show');
 
 // Rute Autentikasi (Belum login)
 Route::middleware('guest')->group(function () {
@@ -41,7 +41,11 @@ Route::middleware('auth')->group(function () {
     // Dashboard Pengguna (Disesuaikan otomatis untuk Admin / Tamu)
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // Transaksi Pemesanan Kamar
+    // Pengaturan Profil User / Admin
+    Route::get('/profile', [UserController::class, 'profile'])->name('profile.show');
+    Route::put('/profile', [UserController::class, 'updateProfile'])->name('profile.update');
+
+    // Transaksi Pemesanan Kamar (Guest & Common)
     Route::get('/bookings', [BookingController::class, 'index'])->name('bookings.index');
     Route::get('/bookings/create/{room}', [BookingController::class, 'create'])->name('bookings.create');
     Route::post('/bookings', [BookingController::class, 'store'])->name('bookings.store');
@@ -51,7 +55,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/bookings/{booking}/cancel', [BookingController::class, 'cancel'])->name('bookings.cancel');
 
     // =============================================
-    // RUTE KHUSUS ADMIN (CRUD Kamar & User Management)
+    // RUTE KHUSUS ADMIN (CRUD Kamar, Booking Offline, & Tamu)
     // =============================================
     Route::middleware('admin')->group(function () {
         // Room Management
@@ -61,8 +65,15 @@ Route::middleware('auth')->group(function () {
         Route::put('/rooms/{room}', [RoomController::class, 'update'])->name('rooms.update');
         Route::delete('/rooms/{room}', [RoomController::class, 'destroy'])->name('rooms.destroy');
 
-        // Admin Management & Guests List
+        // Reservasi Offline Resepsionis (Belikan Tiket Tamu Offline)
+        Route::get('/admin/bookings/create', [BookingController::class, 'createOfflineBooking'])->name('admin.bookings.create');
+        Route::post('/admin/bookings', [BookingController::class, 'storeOfflineBooking'])->name('admin.bookings.store');
+
+        // Admin Management & Guests List (Tambah & Kelola Tamu)
         Route::get('/admin/guests', [UserController::class, 'guests'])->name('admin.guests.index');
+        Route::get('/admin/guests/create', [UserController::class, 'createGuest'])->name('admin.guests.create');
+        Route::post('/admin/guests', [UserController::class, 'storeGuest'])->name('admin.guests.store');
+        
         Route::get('/admin/admins', [UserController::class, 'admins'])->name('admin.admins.index');
         Route::get('/admin/admins/create', [UserController::class, 'createAdmin'])->name('admin.admins.create');
         Route::post('/admin/admins', [UserController::class, 'storeAdmin'])->name('admin.admins.store');

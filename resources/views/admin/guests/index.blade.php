@@ -23,6 +23,11 @@
                         <h1 class="text-3xl sm:text-4xl font-black text-stone-900 font-serif tracking-tight">Data Tamu Terdaftar</h1>
                         <p class="text-xs text-stone-400 mt-1">Daftar pengguna dengan role tamu terdaftar di platform Nginap</p>
                     </div>
+                    <div>
+                        <a href="{{ route('admin.guests.create') }}" class="px-6 py-3 rounded-full bg-stone-900 hover:bg-[#8a6225] text-white font-extrabold text-xs shadow-md transition inline-flex items-center gap-2">
+                            <i class="fa-solid fa-user-plus"></i> Tambah Tamu Baru
+                        </a>
+                    </div>
                 </div>
 
                 <!-- Table Guests -->
@@ -44,6 +49,7 @@
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-stone-100 font-medium">
+                                    <!-- Tampilkan Data Tamu Terdaftar -->
                                     @foreach ($guests as $guest)
                                         <tr class="hover:bg-stone-50 transition">
                                             <td class="py-4 px-4 font-black text-stone-900">#{{ $guest->id }}</td>

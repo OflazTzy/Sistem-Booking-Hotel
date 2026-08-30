@@ -4,10 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\Room;
 use App\Models\Booking;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -36,20 +39,29 @@ class BookingController extends Controller
      */
     public function index()
     {
-        if (Auth::user()->isAdmin()) {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        if ($user->isAdmin()) {
             $bookings = Booking::with(['guest', 'room'])
                 ->orderBy('created_at', 'desc')
                 ->get();
             return view('bookings.index', compact('bookings'));
         } else {
+            $today = Carbon::today()->toDateString();
+
+            // Riwayat Pesanan HANYA berisi pesanan yang DIBATALKAN atau yang SUDAH TERJADI (Check-out di masa lalu)
             $bookings = Booking::with(['guest', 'room'])
                 ->where('guest_id', Auth::id())
+                ->where(function ($query) use ($today) {
+                    $query->where('status', 'cancelled')
+                          ->orWhereDate('check_out', '<', $today);
+                })
                 ->orderBy('created_at', 'desc')
                 ->get();
 
             $myBookingsCount = $bookings->count();
-            $myActiveBookings = $bookings->where('status', 'active');
-            $myActiveBookingsCount = $myActiveBookings->count();
+            $myActiveBookings = $bookings;
+            $myActiveBookingsCount = $bookings->where('status', 'active')->count();
 
             return view('bookings.index', compact('bookings', 'myBookingsCount', 'myActiveBookingsCount', 'myActiveBookings'));
         }
@@ -119,6 +131,7 @@ class BookingController extends Controller
                 }
 
                 // 2c. Update profil tamu
+                /** @var \App\Models\User $user */
                 $user = Auth::user();
                 $user->update([
                     'name'            => $validated['name'],
@@ -202,8 +215,9 @@ class BookingController extends Controller
     public function show(Booking $booking)
     {
         $booking->load(['guest', 'room']);
-
-        if (Auth::user()->isUser() && $booking->guest_id !== Auth::id()) {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        if ($user->isUser() && $booking->guest_id !== Auth::id()) {
             return redirect()->route('bookings.index')
                 ->with('error', 'Anda tidak memiliki akses ke booking ini.');
         }
@@ -221,9 +235,10 @@ class BookingController extends Controller
     public function verifyPayment(Booking $booking)
     {
         $booking->load(['guest', 'room']);
-
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
         // Proteksi akses: tamu hanya bisa verifikasi booking miliknya
-        if (Auth::user()->isUser() && $booking->guest_id !== Auth::id()) {
+        if ($user->isUser() && $booking->guest_id !== Auth::id()) {
             return redirect()->route('bookings.index')
                 ->with('error', 'Akses ditolak.');
         }
@@ -256,8 +271,9 @@ class BookingController extends Controller
     public function pdf(Booking $booking)
     {
         $booking->load(['guest', 'room']);
-
-        if (Auth::user()->isUser() && $booking->guest_id !== Auth::id()) {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        if ($user->isUser() && $booking->guest_id !== Auth::id()) {
             return redirect()->route('bookings.index')
                 ->with('error', 'Akses ditolak.');
         }
@@ -276,9 +292,10 @@ class BookingController extends Controller
     public function cancel(Booking $booking)
     {
         $booking->load(['guest', 'room']);
-
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
         // Proteksi akses
-        if (Auth::user()->isUser() && $booking->guest_id !== Auth::id()) {
+        if ($user->isUser() && $booking->guest_id !== Auth::id()) {
             return redirect()->route('bookings.index')
                 ->with('error', 'Anda tidak memiliki akses untuk membatalkan booking ini.');
         }
@@ -290,7 +307,7 @@ class BookingController extends Controller
         }
 
         // Guard: booking LUNAS hanya bisa dibatalkan oleh Admin
-        if ($booking->status === 'active' && Auth::user()->isUser()) {
+        if ($booking->status === 'active' && $user->isUser()) {
             return redirect()->route('bookings.show', $booking)
                 ->with('error', 'Booking yang sudah LUNAS tidak dapat dibatalkan oleh tamu. Silakan hubungi Administrator Hotel.');
         }
@@ -307,6 +324,99 @@ class BookingController extends Controller
 
         return redirect()->route('bookings.show', $booking)
             ->with('success', 'Booking ' . $booking->booking_code . ' berhasil dibatalkan. Kamar kembali tersedia.');
+    }
+
+    /**
+     * Menampilkan form reservasi offline (Resepsionis membelikan tiket untuk tamu offline).
+     */
+    public function createOfflineBooking()
+    {
+        $rooms = Room::where('status', 'available')->orderBy('room_number', 'asc')->get();
+        $guests = User::where('role', 'user')->orderBy('name', 'asc')->get();
+
+        return view('admin.bookings.create', compact('rooms', 'guests'));
+    }
+
+    /**
+     * Memproses reservasi offline langsung oleh Admin/Resepsionis atas nama tamu.
+     */
+    public function storeOfflineBooking(Request $request)
+    {
+        $validated = $request->validate([
+            'guest_option'     => 'required|in:existing,new',
+            'guest_id'         => 'nullable|required_if:guest_option,existing|exists:users,id',
+            'name'             => 'nullable|required_if:guest_option,new|string|max:255',
+            'email'            => 'nullable|required_if:guest_option,new|email',
+            'phone'            => 'nullable|required_if:guest_option,new|string|max:20',
+            'identity_number'  => 'nullable|required_if:guest_option,new|string|max:50',
+            'room_id'          => 'required|exists:rooms,id',
+            'check_in'         => 'required|date|after_or_equal:today',
+            'check_out'        => 'required|date|after:check_in',
+            'payment_method'   => 'required|in:cash,qris',
+        ], [
+            'guest_option.required' => 'Opsi tamu wajib dipilih.',
+            'guest_id.required_if'  => 'Tamu terdaftar wajib dipilih.',
+            'name.required_if'      => 'Nama tamu baru wajib diisi.',
+            'email.required_if'     => 'Email tamu baru wajib diisi.',
+            'phone.required_if'     => 'No. Handphone/WA wajib diisi.',
+            'identity_number.required_if' => 'No. KTP/SIM wajib diisi.',
+            'room_id.required'      => 'Kamar wajib dipilih.',
+            'check_in.required'     => 'Tanggal check-in wajib diisi.',
+            'check_out.required'    => 'Tanggal check-out wajib diisi.',
+        ]);
+
+        return DB::transaction(function () use ($validated, $request) {
+            // 1. Tentukan/Buat Akun Tamu
+            if ($validated['guest_option'] === 'new') {
+                $guest = User::create([
+                    'name'            => $validated['name'],
+                    'email'           => $validated['email'],
+                    'phone'           => $validated['phone'],
+                    'identity_number' => $validated['identity_number'],
+                    'password'        => Hash::make('password123'), // Default password
+                    'role'            => 'user',
+                ]);
+            } else {
+                $guest = User::findOrFail($validated['guest_id']);
+            }
+
+            // 2. Kunci kamar untuk mencegah double booking
+            $room = Room::where('id', $validated['room_id'])->lockForUpdate()->firstOrFail();
+
+            if (!$room->isAvailable()) {
+                return back()->withErrors(['room_id' => 'Kamar ini sedang diisi atau tidak tersedia.']);
+            }
+
+            // 3. Hitung malam & total harga
+            $totalNights = $this->calculateNights($validated['check_in'], $validated['check_out']);
+            $totalPrice  = $room->price * $totalNights;
+
+            // 4. Buat Kode Booking Unik
+            $bookingCode = 'NGN-' . strtoupper(Str::random(6));
+
+            // 5. Simpan transaksi booking (Langsung LUNAS/active oleh Resepsionis)
+            $booking = Booking::create([
+                'booking_code'   => $bookingCode,
+                'guest_id'       => $guest->id,
+                'room_id'        => $room->id,
+                'check_in'       => $validated['check_in'],
+                'check_in_time'  => '14:00',
+                'check_out'      => $validated['check_out'],
+                'check_out_time' => '12:00',
+                'total_nights'   => $totalNights,
+                'total_price'    => $totalPrice,
+                'payment_method' => $validated['payment_method'],
+                'status'         => 'active', // Langsung terkonfirmasi/Lunas
+            ]);
+
+            // 6. Ubah status kamar menjadi occupied
+            $room->update(['status' => 'occupied']);
+
+            $this->writeLog('OFFLINE BOOKING RESEPSIONIS: ' . $bookingCode . ' untuk ' . $guest->name);
+
+            return redirect()->route('bookings.show', $booking)
+                ->with('success', 'Reservasi Offline Berhasil! Tiket e-Voucher atas nama ' . $guest->name . ' telah diterbitkan.');
+        });
     }
 
     // =========================================================================

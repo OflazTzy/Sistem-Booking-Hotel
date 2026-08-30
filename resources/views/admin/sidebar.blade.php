@@ -46,6 +46,12 @@
                 <i class="fa-solid fa-user-shield w-4 {{ request()->routeIs('admin.admins.*') ? 'text-emerald-400' : '' }}"></i>
                 <span>Pengelola Admin</span>
             </a>
+
+            <!-- 6. Profil Saya -->
+            <a href="{{ route('profile.show') }}" class="w-full flex items-center space-x-3 px-4 py-3 rounded-2xl transition {{ request()->routeIs('profile.*') ? 'bg-white/10 text-white font-extrabold shadow-sm' : 'text-stone-400 hover:text-white hover:bg-white/5' }}">
+                <i class="fa-solid fa-user-gear w-4 {{ request()->routeIs('profile.*') ? 'text-emerald-400' : '' }}"></i>
+                <span>Profil Saya</span>
+            </a>
         </nav>
 
         <!-- Bottom Actions -->

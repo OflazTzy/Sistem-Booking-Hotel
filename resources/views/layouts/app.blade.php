@@ -81,33 +81,25 @@
                             <a href="{{ route('dashboard') }}" class="transition {{ request()->routeIs('dashboard') ? 'text-stone-900 border-b-2 border-stone-900 py-1 font-bold' : 'text-stone-500 hover:text-stone-900' }}">
                                 Dashboard
                             </a>
-
-                            <a href="{{ route('bookings.index') }}" class="transition {{ request()->routeIs('bookings.*') ? 'text-stone-900 border-b-2 border-stone-900 py-1 font-bold' : 'text-stone-500 hover:text-stone-900' }}">
-                                @if(Auth::user()->isAdmin())
-                                    Transaksi
-                                @else
-                                    Pesanan Saya
-                                @endif
-                            </a>
                         @endauth
                     </nav>
 
                     <!-- Right Auth Action Button (Dark Pill Button) -->
                     <div class="hidden md:flex items-center space-x-3">
                         @auth
-                            <div class="flex items-center space-x-3 bg-stone-100 px-3.5 py-1.5 rounded-full border border-stone-200">
-                                <span class="text-xs font-bold text-stone-800">{{ Auth::user()->name }}</span>
+                            <a href="{{ route('profile.show') }}" class="flex items-center space-x-3 bg-stone-100 hover:bg-amber-50 px-3.5 py-1.5 rounded-full border border-stone-200 transition group" title="Lihat & Edit Profil Saya">
+                                <span class="text-xs font-bold text-stone-800 group-hover:text-amber-900"><i class="fa-solid fa-user-gear text-amber-700 me-1"></i> {{ Auth::user()->name }}</span>
                                 <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold {{ Auth::user()->isAdmin() ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-800' }}">
                                     {{ Auth::user()->isAdmin() ? 'Admin' : 'Tamu' }}
                                 </span>
+                            </a>
 
-                                <form action="{{ route('logout') }}" method="POST" class="inline">
-                                    @csrf
-                                    <button type="submit" title="Logout" class="p-1 text-stone-400 hover:text-rose-600 transition">
-                                        <i class="fa-solid fa-arrow-right-from-bracket text-xs"></i>
-                                    </button>
-                                </form>
-                            </div>
+                            <form action="{{ route('logout') }}" method="POST" class="inline">
+                                @csrf
+                                <button type="submit" title="Logout" class="p-2 text-stone-400 hover:text-rose-600 transition">
+                                    <i class="fa-solid fa-arrow-right-from-bracket text-sm"></i>
+                                </button>
+                            </form>
                         @else
                             <a href="{{ route('login') }}" class="px-6 py-2.5 rounded-full bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold transition shadow">
                                 Masuk
@@ -130,8 +122,8 @@
                 <a href="{{ route('rooms.index') }}" class="block px-3 py-2 rounded-xl text-sm font-semibold text-stone-800 hover:bg-stone-50">Kamar</a>
                 @auth
                     <a href="{{ route('dashboard') }}" class="block px-3 py-2 rounded-xl text-sm font-semibold text-stone-800 hover:bg-stone-50">Dashboard</a>
-                    <a href="{{ route('bookings.index') }}" class="block px-3 py-2 rounded-xl text-sm font-semibold text-stone-800 hover:bg-stone-50">
-                        {{ Auth::user()->isAdmin() ? 'Semua Pesanan' : 'Pesanan Saya' }}
+                    <a href="{{ route('profile.show') }}" class="block px-3 py-2 rounded-xl text-sm font-semibold text-amber-800 bg-amber-50">
+                        <i class="fa-solid fa-user-gear me-1.5"></i> Profil Saya
                     </a>
                     <div class="pt-3 border-t border-stone-200 flex items-center justify-between">
                         <div>

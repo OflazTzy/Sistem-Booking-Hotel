@@ -24,6 +24,13 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 
+# File temporary Word / Office lock files
+~$*
+
+# File sistem tool & opencode
+.opencode/
+opencode.json
+
 # Abaikan seluruh file dokumen LK (Word & PDF)
 LK*.doc
 LK*.docx

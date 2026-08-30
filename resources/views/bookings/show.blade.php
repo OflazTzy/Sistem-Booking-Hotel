@@ -139,6 +139,15 @@
             <button onclick="alert('Jadwal booking {{ $booking->booking_code }} ditambahkan ke kalender!')" class="w-full sm:w-auto px-8 py-3.5 rounded-full bg-white border border-stone-900 text-stone-900 font-extrabold text-xs hover:bg-stone-50 transition text-center flex items-center justify-center gap-2">
                 <i class="fa-regular fa-calendar-plus"></i> Tambah ke Kalender
             </button>
+
+            @if($booking->status !== 'cancelled')
+                <form action="{{ route('bookings.cancel', $booking) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan reservasi ini?');" class="w-full sm:w-auto">
+                    @csrf
+                    <button type="submit" class="w-full sm:w-auto px-8 py-3.5 rounded-full bg-rose-100 hover:bg-rose-200 text-rose-800 border border-rose-300 font-extrabold text-xs transition text-center flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-ban"></i> Batalkan Pesanan
+                    </button>
+                </form>
+            @endif
         </div>
 
         <div class="text-center">

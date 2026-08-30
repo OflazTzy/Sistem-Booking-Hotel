@@ -26,6 +26,11 @@
                                 <h1 class="text-3xl sm:text-4xl font-black text-stone-900 font-serif tracking-tight">Pesanan</h1>
                                 <p class="text-xs text-stone-400 mt-1">Daftar seluruh riwayat reservasi kamar hotel terintegrasi</p>
                             </div>
+                            <div>
+                                <a href="{{ route('admin.bookings.create') }}" class="px-6 py-3 rounded-full bg-stone-900 hover:bg-[#8a6225] text-white font-extrabold text-xs shadow-md transition inline-flex items-center gap-2">
+                                    <i class="fa-solid fa-cash-register"></i> Pesan Kamar Offline (Resepsionis)
+                                </a>
+                            </div>
                         </div>
 
                         <!-- Table Transaksi Bookings (Match Stitch Admin Screenshot) -->
@@ -93,9 +98,17 @@
                                                             <a href="{{ route('bookings.show', $booking) }}" class="px-3 py-1.5 rounded-full bg-stone-900 text-white font-extrabold text-[10px] hover:bg-[#8a6225] transition">
                                                                 Detail
                                                             </a>
-                                                            <a href="{{ route('bookings.pdf', $booking) }}" target="_blank" class="px-2.5 py-1.5 rounded-full bg-rose-50 text-rose-600 font-extrabold text-[10px] hover:bg-rose-100 transition">
+                                                            <a href="{{ route('bookings.pdf', $booking) }}" target="_blank" class="px-2.5 py-1.5 rounded-full bg-rose-50 text-rose-600 font-extrabold text-[10px] hover:bg-rose-100 transition" title="Unduh PDF">
                                                                 PDF
                                                             </a>
+                                                            @if($booking->status !== 'cancelled')
+                                                                <form action="{{ route('bookings.cancel', $booking) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan booking {{ $booking->booking_code }}?');" class="inline">
+                                                                    @csrf
+                                                                    <button type="submit" class="px-2.5 py-1.5 rounded-full bg-rose-100 text-rose-800 font-extrabold text-[10px] hover:bg-rose-200 transition" title="Batalkan Pesanan">
+                                                                        Batal
+                                                                    </button>
+                                                                </form>
+                                                            @endif
                                                         </div>
                                                     </td>
                                                 </tr>

@@ -16,12 +16,21 @@
 
         <!-- Top Greeting (Match Image 2) -->
         <div class="mb-8">
-            <h1 class="text-3xl sm:text-4xl font-black text-stone-900 font-serif tracking-tight flex items-center gap-3">
-                Halo, {{ Auth::user()->name }} <span class="text-2xl">👋</span>
-            </h1>
-            <p class="text-xs text-stone-500 mt-1">
-                Punya {{ $activeCount }} pesanan yang akan datang.
-            </p>
+            @if(request()->routeIs('bookings.index'))
+                <h1 class="text-3xl sm:text-4xl font-black text-stone-900 font-serif tracking-tight flex items-center gap-3">
+                    Riwayat Pesanan Saya <span class="text-2xl">📜</span>
+                </h1>
+                <p class="text-xs text-stone-500 mt-1">
+                    Menampilkan seluruh riwayat reservasi Anda (Aktif, Pending, dan Dibatalkan).
+                </p>
+            @else
+                <h1 class="text-3xl sm:text-4xl font-black text-stone-900 font-serif tracking-tight flex items-center gap-3">
+                    Halo, {{ Auth::user()->name }} <span class="text-2xl">👋</span>
+                </h1>
+                <p class="text-xs text-stone-500 mt-1">
+                    Punya {{ $activeCount }} pesanan aktif yang akan datang.
+                </p>
+            @endif
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -36,11 +45,11 @@
                     <i class="fa-solid fa-compass w-4"></i>
                     <span>Jelajahi Kamar</span>
                 </a>
-                <a href="#" class="shrink-0 flex items-center space-x-2.5 px-4 py-2.5 sm:px-5 sm:py-3 rounded-2xl text-xs font-bold text-stone-600 bg-white hover:bg-stone-100 transition">
-                    <i class="fa-regular fa-heart w-4"></i>
-                    <span>Favorit</span>
+                <a href="{{ route('bookings.index') }}" class="shrink-0 flex items-center space-x-2.5 px-4 py-2.5 sm:px-5 sm:py-3 rounded-2xl text-xs font-bold transition {{ request()->routeIs('bookings.index') ? 'bg-[#e7d8ca] text-stone-900 font-extrabold shadow-sm' : 'bg-white text-stone-600 hover:bg-stone-100' }}">
+                    <i class="fa-solid fa-clock-rotate-left w-4"></i>
+                    <span>Riwayat Pesanan</span>
                 </a>
-                <a href="#" class="shrink-0 flex items-center space-x-2.5 px-4 py-2.5 sm:px-5 sm:py-3 rounded-2xl text-xs font-bold text-stone-600 bg-white hover:bg-stone-100 transition">
+                <a href="{{ route('profile.show') }}" class="shrink-0 flex items-center space-x-2.5 px-4 py-2.5 sm:px-5 sm:py-3 rounded-2xl text-xs font-bold text-stone-600 bg-white hover:bg-stone-100 transition {{ request()->routeIs('profile.*') ? 'bg-[#e7d8ca] text-stone-900 font-extrabold shadow-sm' : '' }}">
                     <i class="fa-regular fa-user w-4"></i>
                     <span>Profil Saya</span>
                 </a>
@@ -54,8 +63,8 @@
                         <div class="w-16 h-16 mx-auto mb-3 rounded-full bg-stone-100 text-stone-400 flex items-center justify-center text-3xl">
                             <i class="fa-solid fa-inbox"></i>
                         </div>
-                        <h3 class="text-lg font-bold text-stone-900 font-serif mb-1">Belum Ada Pesanan Aktif</h3>
-                        <p class="text-xs text-stone-400 mb-6">Anda belum memiliki pemesanan kamar yang akan datang.</p>
+                        <h3 class="text-lg font-bold text-stone-900 font-serif mb-1">Belum Ada Pesanan</h3>
+                        <p class="text-xs text-stone-400 mb-6">Anda belum memiliki pemesanan kamar di platform Nginap.</p>
                         <a href="{{ route('rooms.index') }}" class="px-6 py-3 rounded-full bg-[#8a6225] hover:bg-[#73501d] text-white font-extrabold text-xs shadow-md transition inline-flex items-center gap-2">
                             <i class="fa-solid fa-magnifying-glass"></i> Cari & Pesan Kamar
                         </a>
@@ -69,9 +78,19 @@
                             <div class="md:col-span-8 p-6 flex flex-col justify-between">
                                 <div>
                                     <div class="flex items-center justify-between mb-2">
-                                        <span class="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 font-extrabold text-[10px] uppercase border border-emerald-200">
-                                            AKAN DATANG
-                                        </span>
+                                        @if($booking->status === 'active')
+                                            <span class="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 font-extrabold text-[10px] uppercase border border-emerald-200">
+                                                AKAN DATANG / TERKONFIRMASI
+                                            </span>
+                                        @elseif($booking->status === 'pending')
+                                            <span class="px-3 py-1 rounded-full bg-amber-100 text-amber-800 font-extrabold text-[10px] uppercase border border-amber-200">
+                                                MENUNGGU VERIFIKASI
+                                            </span>
+                                        @else
+                                            <span class="px-3 py-1 rounded-full bg-rose-100 text-rose-800 font-extrabold text-[10px] uppercase border border-rose-200">
+                                                DIBATALKAN
+                                            </span>
+                                        @endif
                                     </div>
 
                                     <h3 class="text-xl font-black text-stone-900 font-serif mb-1">
@@ -105,9 +124,19 @@
                                     </strong>
                                 </div>
 
-                                <a href="{{ route('bookings.show', $booking) }}" class="w-full py-2.5 px-4 rounded-full bg-[#8a6225] hover:bg-[#73501d] text-white font-extrabold text-xs text-center shadow transition">
-                                    Lihat e-Tiket
-                                </a>
+                                <div class="w-full space-y-2">
+                                    <a href="{{ route('bookings.show', $booking) }}" class="w-full block py-2.5 px-4 rounded-full bg-[#8a6225] hover:bg-[#73501d] text-white font-extrabold text-xs text-center shadow transition">
+                                        Lihat e-Tiket
+                                    </a>
+                                    @if($booking->status !== 'cancelled')
+                                        <form action="{{ route('bookings.cancel', $booking) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan booking {{ $booking->booking_code }}?');">
+                                            @csrf
+                                            <button type="submit" class="w-full py-1.5 px-4 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-[11px] border border-rose-200 text-center transition">
+                                                <i class="fa-solid fa-ban me-1"></i> Batalkan
+                                            </button>
+                                        </form>
+                                    @endif
+                                </div>
                             </div>
 
                         </div>
@@ -123,7 +152,7 @@
                         <div>
                             <span class="text-[10px] font-black uppercase tracking-wider text-stone-400 block">TOTAL MALAM MENGINAP</span>
                             <strong class="text-lg font-black text-stone-900">
-                                {{ $activeBookingsList->sum('total_nights') }} Malam
+                                {{ $activeBookingsList->where('status', '!=', 'cancelled')->sum('total_nights') }} Malam
                             </strong>
                         </div>
                     </div>

@@ -97,7 +97,7 @@
                         </div>
                     </div>
                     <div class="p-6 pt-0 flex items-center justify-between border-t border-stone-100">
-                        <span class="text-xs font-bold text-stone-400">Mulai Rp 450.000</span>
+                        <span class="text-xs font-bold text-stone-400">Mulai Rp {{ number_format($standardPrice, 0, ',', '.') }}</span>
                         <a href="{{ route('rooms.index') }}" class="px-4 py-2 rounded-full bg-stone-900 hover:bg-[#8a6225] text-white font-extrabold text-xs transition">
                             Pilih Kamar
                         </a>
@@ -116,7 +116,7 @@
                         </div>
                     </div>
                     <div class="p-6 pt-0 flex items-center justify-between border-t border-stone-100">
-                        <span class="text-xs font-bold text-stone-400">Mulai Rp 650.000</span>
+                        <span class="text-xs font-bold text-stone-400">Mulai Rp {{ number_format($deluxePrice, 0, ',', '.') }}</span>
                         <a href="{{ route('rooms.index') }}" class="px-4 py-2 rounded-full bg-stone-900 hover:bg-[#8a6225] text-white font-extrabold text-xs transition">
                             Pilih Kamar
                         </a>
@@ -140,7 +140,7 @@
                         </div>
                     </div>
                     <div class="p-6 pt-0 flex items-center justify-between border-t border-stone-100">
-                        <span class="text-xs font-bold text-stone-400">Mulai Rp 1.200.000</span>
+                        <span class="text-xs font-bold text-stone-400">Mulai Rp {{ number_format($suitePrice, 0, ',', '.') }}</span>
                         <a href="{{ route('rooms.index') }}" class="px-4 py-2 rounded-full bg-stone-900 hover:bg-[#8a6225] text-white font-extrabold text-xs transition">
                             Pilih Kamar
                         </a>

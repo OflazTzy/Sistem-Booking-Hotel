@@ -21,7 +21,15 @@ class DashboardController extends Controller
         $availableRooms = Room::where('status', 'available')->count();
         $sampleRooms    = Room::where('status', 'available')->take(3)->get();
 
-        return view('home', compact('totalRooms', 'availableRooms', 'sampleRooms'));
+        // Ambil harga terendah dari database untuk tiap tipe kamar
+        $standardPrice = Room::where('room_type', 'Standard')->min('price') ?? 350000;
+        $deluxePrice   = Room::where('room_type', 'Deluxe')->min('price') ?? 650000;
+        $suitePrice    = Room::where('room_type', 'Suite')->min('price') ?? 1200000;
+
+        return view('home', compact(
+            'totalRooms', 'availableRooms', 'sampleRooms',
+            'standardPrice', 'deluxePrice', 'suitePrice'
+        ));
     }
 
     /**
@@ -87,18 +95,18 @@ class DashboardController extends Controller
 
         // 2. DASHBOARD USER / TAMU
         $availableRooms = Room::where('status', 'available')->count();
+        $today = Carbon::today()->toDateString();
+
+        // Pesanan Saya di Dashboard HANYA menampilkan pesanan yang akan datang (Check-out >= Hari Ini & Belum Dibatalkan)
+        $myActiveBookings = Booking::with(['room', 'guest'])
+            ->where('guest_id', $user->id)
+            ->where('status', '!=', 'cancelled')
+            ->whereDate('check_out', '>=', $today)
+            ->orderBy('check_in', 'asc')
+            ->get();
 
         $myBookingsCount = Booking::where('guest_id', $user->id)->count();
-        $myActiveBookingsCount = Booking::where('guest_id', $user->id)
-            ->where('status', 'active')
-            ->count();
-
-        // Booking aktif milik tamu tersebut
-        $myActiveBookings = Booking::with(['room'])
-            ->where('guest_id', $user->id)
-            ->where('status', 'active')
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $myActiveBookingsCount = $myActiveBookings->count();
 
         return view('dashboard.user', compact(
             'availableRooms', 'myBookingsCount', 'myActiveBookingsCount', 'myActiveBookings'

@@ -14,7 +14,7 @@ class User extends Authenticatable
     use HasFactory, Notifiable;
 
     /**
-     * Kolom yang boleh diisi secara massal.
+     * kolom yang dapat diisi untuk registrasi
      *
      * @var list<string>
      */
