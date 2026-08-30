@@ -11,10 +11,10 @@ use App\Mail\SendOtpMail;
 use Exception;
 
 /**
- * Controller untuk autentikasi:
- * - Admin Login: Email + Password + OTP 2FA via Email.
- * - User/Tamu Login: Email + Password (Langsung).
- * - User/Tamu Register: Form Identitas + Verifikasi Email OTP.
+ * [SOAL 2 IMPLEMENTASI LARAVEL]: Controller Autentikasi & Verifikasi OTP
+ * - Admin Login: Email + Password + Verifikasi Kode OTP 2FA via Email.
+ * - User/Tamu Login: Email + Password (Autentikasi Langsung).
+ * - User/Tamu Register: Form Identitas + Verifikasi Email OTP 6-Digit.
  */
 class AuthController extends Controller
 {
@@ -80,7 +80,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Memproses verifikasi kode OTP khusus Admin.
+     * [SOAL 2 IMPLEMENTASI LARAVEL]: Memproses Verifikasi Kode OTP 2FA Email Khusus Admin
      */
     public function verifyOtp(Request $request)
     {
