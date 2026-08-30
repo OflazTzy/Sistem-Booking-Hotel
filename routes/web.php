@@ -18,6 +18,7 @@ use App\Http\Controllers\UserController;
 // =============================================
 Route::get('/', [DashboardController::class, 'home'])->name('home');
 Route::get('/rooms', [RoomController::class, 'index'])->name('rooms.index');
+Route::get('/rooms/{room}', [RoomController::class, 'show'])->name('rooms.show');
 
 // Rute Autentikasi (Belum login)
 Route::middleware('guest')->group(function () {

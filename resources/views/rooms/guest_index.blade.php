@@ -156,7 +156,7 @@
 
                         <div class="w-full">
                             @if($room->isAvailable())
-                                <a href="{{ route('bookings.create', $room) }}" class="w-full block py-2.5 px-4 rounded-full bg-[#8a6225] hover:bg-[#73501d] text-white font-extrabold text-xs text-center shadow transition">
+                                <a href="{{ route('rooms.show', $room) }}" class="w-full block py-2.5 px-4 rounded-full bg-[#8a6225] hover:bg-[#73501d] text-white font-extrabold text-xs text-center shadow transition">
                                     LIHAT KAMAR
                                 </a>
                             @else

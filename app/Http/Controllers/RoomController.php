@@ -27,6 +27,14 @@ class RoomController extends Controller
     }
 
     /**
+     * Menampilkan detail kamar (Stitch Screen 3: Hotel Detail).
+     */
+    public function show(Room $room)
+    {
+        return view('rooms.show', compact('room'));
+    }
+
+    /**
      * Menampilkan form tambah kamar baru (Khusus Admin).
      */
     public function create()
