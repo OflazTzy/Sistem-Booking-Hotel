@@ -65,18 +65,25 @@ Route::middleware('auth')->group(function () {
         Route::put('/rooms/{room}', [RoomController::class, 'update'])->name('rooms.update');
         Route::delete('/rooms/{room}', [RoomController::class, 'destroy'])->name('rooms.destroy');
 
-        // Reservasi Offline Resepsionis (Belikan Tiket Tamu Offline)
+        // Reservasi Offline Resepsionis & Edit Data Reservasi Tamu
         Route::get('/admin/bookings/create', [BookingController::class, 'createOfflineBooking'])->name('admin.bookings.create');
         Route::post('/admin/bookings', [BookingController::class, 'storeOfflineBooking'])->name('admin.bookings.store');
+        Route::get('/admin/bookings/{booking}/edit', [BookingController::class, 'edit'])->name('admin.bookings.edit');
+        Route::put('/admin/bookings/{booking}', [BookingController::class, 'update'])->name('admin.bookings.update');
 
         // Admin Management & Guests List (Tambah & Kelola Tamu)
         Route::get('/admin/guests', [UserController::class, 'guests'])->name('admin.guests.index');
         Route::get('/admin/guests/create', [UserController::class, 'createGuest'])->name('admin.guests.create');
         Route::post('/admin/guests', [UserController::class, 'storeGuest'])->name('admin.guests.store');
+        Route::get('/admin/guests/{user}/edit', [UserController::class, 'editGuest'])->name('admin.guests.edit');
+        Route::put('/admin/guests/{user}', [UserController::class, 'updateGuest'])->name('admin.guests.update');
+        Route::delete('/admin/guests/{user}', [UserController::class, 'destroyGuest'])->name('admin.guests.destroy');
         
         Route::get('/admin/admins', [UserController::class, 'admins'])->name('admin.admins.index');
         Route::get('/admin/admins/create', [UserController::class, 'createAdmin'])->name('admin.admins.create');
         Route::post('/admin/admins', [UserController::class, 'storeAdmin'])->name('admin.admins.store');
+        Route::get('/admin/admins/{user}/edit', [UserController::class, 'editAdmin'])->name('admin.admins.edit');
+        Route::put('/admin/admins/{user}', [UserController::class, 'updateAdmin'])->name('admin.admins.update');
     });
 
 });

@@ -45,6 +45,9 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+    <!-- SweetAlert2 CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <!-- Font Awesome 6 Icons CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
@@ -241,6 +244,72 @@
     @endif
 
     @stack('scripts')
+
+    <!-- Hidden Flash Messages Container for Clean JS Parsing -->
+    <div id="flash-messages" data-success="{{ session('success') }}" data-error="{{ session('error') }}"></div>
+
+    <!-- SweetAlert2 Modern Notification & Dialog Handler -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const flashEl = document.getElementById('flash-messages');
+            const flashSuccess = flashEl ? flashEl.getAttribute('data-success') : '';
+            const flashError   = flashEl ? flashEl.getAttribute('data-error') : '';
+
+            if (flashSuccess) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil!',
+                    text: flashSuccess,
+                    confirmButtonColor: '#8a6225',
+                    background: '#ffffff',
+                    customClass: {
+                        popup: 'rounded-3xl shadow-2xl border border-stone-100',
+                        confirmButton: 'px-6 py-2.5 rounded-full font-bold text-xs shadow-md'
+                    }
+                });
+            }
+
+            if (flashError) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Terjadi Kesalahan',
+                    text: flashError,
+                    confirmButtonColor: '#e11d48',
+                    background: '#ffffff',
+                    customClass: {
+                        popup: 'rounded-3xl shadow-2xl border border-stone-100',
+                        confirmButton: 'px-6 py-2.5 rounded-full font-bold text-xs shadow-md'
+                    }
+                });
+            }
+        });
+
+        // Helper fungsi konfirmasi hapus / pembatalan berbasis SweetAlert2
+        function confirmAction(event, titleText, messageText, confirmBtnText = 'Ya, Lanjutkan!') {
+            event.preventDefault();
+            const form = event.target.closest('form');
+            Swal.fire({
+                title: titleText,
+                text: messageText,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#8a6225',
+                cancelButtonColor: '#78716c',
+                confirmButtonText: confirmBtnText,
+                cancelButtonText: 'Batal',
+                background: '#ffffff',
+                customClass: {
+                    popup: 'rounded-3xl shadow-2xl border border-stone-100 p-6',
+                    confirmButton: 'px-6 py-2.5 rounded-full font-bold text-xs shadow-md me-2',
+                    cancelButton: 'px-6 py-2.5 rounded-full font-bold text-xs shadow-md'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        }
+    </script>
 
 </body>
 </html>

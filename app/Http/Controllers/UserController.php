@@ -169,4 +169,107 @@ class UserController extends Controller
         return redirect()->route('admin.guests.index')
             ->with('success', 'Tamu baru bernama ' . $validated['name'] . ' berhasil ditambahkan!');
     }
+
+    /**
+     * Menghapus data akun Tamu oleh Admin.
+     */
+    public function destroyGuest(User $user)
+    {
+        if ($user->isAdmin() || $user->id === Auth::id()) {
+            return redirect()->route('admin.guests.index')
+                ->with('error', 'Akun Administrator tidak dapat dihapus dari halaman ini.');
+        }
+
+        $guestName = $user->name;
+        $user->delete();
+
+        return redirect()->route('admin.guests.index')
+            ->with('success', 'Data tamu ' . $guestName . ' berhasil dihapus dari database.');
+    }
+
+    /**
+     * Menampilkan form edit data Tamu oleh Admin.
+     */
+    public function editGuest(User $user)
+    {
+        return view('admin.guests.edit', compact('user'));
+    }
+
+    /**
+     * Memperbarui data Tamu oleh Admin.
+     */
+    public function updateGuest(Request $request, User $user)
+    {
+        $validated = $request->validate([
+            'name'            => 'required|string|max:255',
+            'email'           => 'required|email|unique:users,email,' . $user->id,
+            'identity_number' => 'nullable|string|max:50',
+            'phone'           => 'nullable|string|max:20',
+            'password'        => 'nullable|string|min:6',
+        ], [
+            'name.required'  => 'Nama wajib diisi.',
+            'email.required' => 'Email wajib diisi.',
+            'email.unique'   => 'Email sudah digunakan oleh akun lain.',
+            'password.min'   => 'Password minimal 6 karakter.',
+        ]);
+
+        $data = [
+            'name'            => $validated['name'],
+            'email'           => $validated['email'],
+            'identity_number' => $validated['identity_number'] ?? $user->identity_number,
+            'phone'           => $validated['phone'] ?? $user->phone,
+        ];
+
+        if (!empty($validated['password'])) {
+            $data['password'] = Hash::make($validated['password']);
+        }
+
+        $user->update($data);
+
+        return redirect()->route('admin.guests.index')
+            ->with('success', 'Data akun tamu ' . $user->name . ' berhasil diperbarui!');
+    }
+
+    /**
+     * Menampilkan form edit data Administrator oleh Admin.
+     */
+    public function editAdmin(User $user)
+    {
+        return view('admin.admins.edit', compact('user'));
+    }
+
+    /**
+     * Memperbarui data Administrator oleh Admin.
+     */
+    public function updateAdmin(Request $request, User $user)
+    {
+        $validated = $request->validate([
+            'name'            => 'required|string|max:255',
+            'email'           => 'required|email|unique:users,email,' . $user->id,
+            'identity_number' => 'nullable|string|max:50',
+            'phone'           => 'nullable|string|max:20',
+            'password'        => 'nullable|string|min:6',
+        ], [
+            'name.required'  => 'Nama wajib diisi.',
+            'email.required' => 'Email wajib diisi.',
+            'email.unique'   => 'Email sudah digunakan oleh akun lain.',
+            'password.min'   => 'Password minimal 6 karakter.',
+        ]);
+
+        $data = [
+            'name'            => $validated['name'],
+            'email'           => $validated['email'],
+            'identity_number' => $validated['identity_number'] ?? $user->identity_number,
+            'phone'           => $validated['phone'] ?? $user->phone,
+        ];
+
+        if (!empty($validated['password'])) {
+            $data['password'] = Hash::make($validated['password']);
+        }
+
+        $user->update($data);
+
+        return redirect()->route('admin.admins.index')
+            ->with('success', 'Data administrator ' . $user->name . ' berhasil diperbarui!');
+    }
 }

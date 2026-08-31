@@ -129,7 +129,7 @@
                                         Lihat e-Tiket
                                     </a>
                                     @if($booking->status !== 'cancelled')
-                                        <form action="{{ route('bookings.cancel', $booking) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan booking {{ $booking->booking_code }}?');">
+                                        <form action="{{ route('bookings.cancel', $booking) }}" method="POST" onsubmit="confirmAction(event, 'Batalkan Booking?', 'Apakah Anda yakin ingin membatalkan booking {{ $booking->booking_code }}?', 'Ya, Batalkan!');">
                                             @csrf
                                             <button type="submit" class="w-full py-1.5 px-4 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-[11px] border border-rose-200 text-center transition">
                                                 <i class="fa-solid fa-ban me-1"></i> Batalkan

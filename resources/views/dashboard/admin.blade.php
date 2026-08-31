@@ -64,7 +64,7 @@
                             <i class="fa-solid fa-wallet text-stone-300"></i>
                         </div>
                         <h3 class="text-2xl font-black text-stone-900 font-serif">
-                            Rp {{ number_format(($totalRevenue ?? 0) / 1000000, 1, ',', '.') }}M
+                            Rp {{ number_format($totalRevenue ?? 0, 0, ',', '.') }}
                         </h3>
                         <span class="text-[11px] font-bold text-emerald-600 flex items-center gap-1">
                             <i class="fa-solid fa-arrow-up text-[9px]"></i> Total Lunas
@@ -265,7 +265,7 @@
                     },
                     y: {
                         grid: { color: '#f5f5f4' },
-                        ticks: { font: { size: 11, family: 'Plus Jakarta Sans' }, color: '#78716c', callback: (value) => 'Rp ' + value + 'M' }
+                        ticks: { font: { size: 11, family: 'Plus Jakarta Sans' }, color: '#78716c', callback: (value) => 'Rp ' + Number(value).toLocaleString('id-ID') }
                     }
                 }
             }

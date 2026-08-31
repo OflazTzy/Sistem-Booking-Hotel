@@ -98,11 +98,16 @@
                                                             <a href="{{ route('bookings.show', $booking) }}" class="px-3 py-1.5 rounded-full bg-stone-900 text-white font-extrabold text-[10px] hover:bg-[#8a6225] transition">
                                                                 Detail
                                                             </a>
+                                                            @if(Auth::check() && Auth::user()->isAdmin())
+                                                                <a href="{{ route('admin.bookings.edit', $booking) }}" class="px-2.5 py-1.5 rounded-full bg-amber-100 text-amber-900 font-extrabold text-[10px] hover:bg-amber-200 transition" title="Edit Jam Check-out / Reservasi">
+                                                                    Edit
+                                                                </a>
+                                                            @endif
                                                             <a href="{{ route('bookings.pdf', $booking) }}" target="_blank" class="px-2.5 py-1.5 rounded-full bg-rose-50 text-rose-600 font-extrabold text-[10px] hover:bg-rose-100 transition" title="Unduh PDF">
                                                                 PDF
                                                             </a>
                                                             @if($booking->status !== 'cancelled')
-                                                                <form action="{{ route('bookings.cancel', $booking) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan booking {{ $booking->booking_code }}?');" class="inline">
+                                                                <form action="{{ route('bookings.cancel', $booking) }}" method="POST" onsubmit="confirmAction(event, 'Batalkan Booking?', 'Apakah Anda yakin ingin membatalkan booking {{ $booking->booking_code }}?', 'Ya, Batalkan!');" class="inline">
                                                                     @csrf
                                                                     <button type="submit" class="px-2.5 py-1.5 rounded-full bg-rose-100 text-rose-800 font-extrabold text-[10px] hover:bg-rose-200 transition" title="Batalkan Pesanan">
                                                                         Batal

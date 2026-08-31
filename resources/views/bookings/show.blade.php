@@ -136,12 +136,18 @@
                 <i class="fa-solid fa-download"></i> Unduh e-Tiket (PDF)
             </a>
 
-            <button onclick="alert('Jadwal booking {{ $booking->booking_code }} ditambahkan ke kalender!')" class="w-full sm:w-auto px-8 py-3.5 rounded-full bg-white border border-stone-900 text-stone-900 font-extrabold text-xs hover:bg-stone-50 transition text-center flex items-center justify-center gap-2">
+            @if(Auth::check() && Auth::user()->isAdmin())
+                <a href="{{ route('admin.bookings.edit', $booking) }}" class="w-full sm:w-auto px-8 py-3.5 rounded-full bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-xs shadow-md transition text-center flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-pen-to-square"></i> Edit Reservasi (Jam Check-out)
+                </a>
+            @endif
+
+            <button onclick="Swal.fire({icon: 'info', title: 'Kalender', text: 'Jadwal booking {{ $booking->booking_code }} ditambahkan ke kalender Anda!', confirmButtonColor: '#8a6225'})" class="w-full sm:w-auto px-8 py-3.5 rounded-full bg-white border border-stone-900 text-stone-900 font-extrabold text-xs hover:bg-stone-50 transition text-center flex items-center justify-center gap-2">
                 <i class="fa-regular fa-calendar-plus"></i> Tambah ke Kalender
             </button>
 
             @if($booking->status !== 'cancelled')
-                <form action="{{ route('bookings.cancel', $booking) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan reservasi ini?');" class="w-full sm:w-auto">
+                <form action="{{ route('bookings.cancel', $booking) }}" method="POST" onsubmit="confirmAction(event, 'Batalkan Reservasi?', 'Apakah Anda yakin ingin membatalkan reservasi {{ $booking->booking_code }} ini?', 'Ya, Batalkan!');" class="w-full sm:w-auto">
                     @csrf
                     <button type="submit" class="w-full sm:w-auto px-8 py-3.5 rounded-full bg-rose-100 hover:bg-rose-200 text-rose-800 border border-rose-300 font-extrabold text-xs transition text-center flex items-center justify-center gap-2">
                         <i class="fa-solid fa-ban"></i> Batalkan Pesanan

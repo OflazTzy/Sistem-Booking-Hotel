@@ -327,6 +327,76 @@ class BookingController extends Controller
     }
 
     /**
+     * Menampilkan form edit reservasi tamu (Khusus Admin).
+     * Admin dapat mengubah tanggal/jam check-in, tanggal/jam check-out asli, denda keterlambatan, dan status.
+     */
+    public function edit(Booking $booking)
+    {
+        $booking->load(['guest', 'room']);
+        $rooms = Room::orderBy('room_number', 'asc')->get();
+
+        return view('admin.bookings.edit', compact('booking', 'rooms'));
+    }
+
+    /**
+     * Memperbarui data reservasi tamu oleh Admin.
+     */
+    public function update(Request $request, Booking $booking)
+    {
+        $validated = $request->validate([
+            'check_in'       => 'required|date',
+            'check_in_time'  => 'required',
+            'check_out'      => 'required|date|after_or_equal:check_in',
+            'check_out_time' => 'required',
+            'status'         => 'required|in:active,pending,cancelled',
+            'payment_method' => 'required|in:qris,cash',
+            'late_hours'     => 'nullable|integer|min:0',
+            'late_fee'       => 'nullable|numeric|min:0',
+        ], [
+            'check_in.required'       => 'Tanggal check-in wajib diisi.',
+            'check_in_time.required'  => 'Jam check-in wajib diisi.',
+            'check_out.required'       => 'Tanggal check-out wajib diisi.',
+            'check_out_time.required' => 'Jam check-out wajib diisi.',
+            'status.required'         => 'Status reservasi wajib dipilih.',
+            'payment_method.required' => 'Metode pembayaran wajib dipilih.',
+        ]);
+
+        return DB::transaction(function () use ($validated, $booking) {
+            $totalNights = $this->calculateNights($validated['check_in'], $validated['check_out']);
+            $roomPrice   = $booking->room ? $booking->room->price : 0;
+            $lateFee     = (int) ($validated['late_fee'] ?? 0);
+            $totalPrice  = ($roomPrice * $totalNights) + $lateFee;
+
+            $booking->update([
+                'check_in'       => $validated['check_in'],
+                'check_in_time'  => $validated['check_in_time'],
+                'check_out'      => $validated['check_out'],
+                'check_out_time' => $validated['check_out_time'],
+                'total_nights'   => $totalNights,
+                'late_hours'     => $validated['late_hours'] ?? 0,
+                'late_fee'       => $lateFee,
+                'total_price'    => $totalPrice,
+                'payment_method' => $validated['payment_method'],
+                'status'         => $validated['status'],
+            ]);
+
+            // Kelola status kamar otomatis
+            if ($booking->room) {
+                if ($validated['status'] === 'cancelled') {
+                    $booking->room->update(['status' => 'available']);
+                } elseif ($validated['status'] === 'active') {
+                    $booking->room->update(['status' => 'occupied']);
+                }
+            }
+
+            $this->writeLog('EDIT RESERVASI: ' . $booking->booking_code . ' oleh Admin ' . Auth::user()->name);
+
+            return redirect()->route('bookings.show', $booking)
+                ->with('success', 'Data reservasi ' . $booking->booking_code . ' (Check-in/Out & Jam) berhasil diperbarui!');
+        });
+    }
+
+    /**
      * Menampilkan form reservasi offline (Resepsionis membelikan tiket untuk tamu offline).
      */
     public function createOfflineBooking()
@@ -391,12 +461,8 @@ class BookingController extends Controller
             $totalNights = $this->calculateNights($validated['check_in'], $validated['check_out']);
             $totalPrice  = $room->price * $totalNights;
 
-            // 4. Buat Kode Booking Unik
-            $bookingCode = 'NGN-' . strtoupper(Str::random(6));
-
-            // 5. Simpan transaksi booking (Langsung LUNAS/active oleh Resepsionis)
+            // 4. Simpan transaksi booking (Langsung LUNAS/active oleh Resepsionis)
             $booking = Booking::create([
-                'booking_code'   => $bookingCode,
                 'guest_id'       => $guest->id,
                 'room_id'        => $room->id,
                 'check_in'       => $validated['check_in'],
@@ -409,10 +475,10 @@ class BookingController extends Controller
                 'status'         => 'active', // Langsung terkonfirmasi/Lunas
             ]);
 
-            // 6. Ubah status kamar menjadi occupied
+            // 5. Ubah status kamar menjadi occupied
             $room->update(['status' => 'occupied']);
 
-            $this->writeLog('OFFLINE BOOKING RESEPSIONIS: ' . $bookingCode . ' untuk ' . $guest->name);
+            $this->writeLog('OFFLINE BOOKING RESEPSIONIS: ' . $booking->booking_code . ' untuk ' . $guest->name);
 
             return redirect()->route('bookings.show', $booking)
                 ->with('success', 'Reservasi Offline Berhasil! Tiket e-Voucher atas nama ' . $guest->name . ' telah diterbitkan.');

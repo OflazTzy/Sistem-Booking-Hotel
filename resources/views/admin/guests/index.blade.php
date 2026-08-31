@@ -39,20 +39,19 @@
                             <table class="w-full text-left text-xs text-stone-600">
                                 <thead class="bg-stone-900 text-white uppercase tracking-wider font-extrabold text-[10px]">
                                     <tr>
-                                        <th class="py-3.5 px-4 rounded-l-xl">ID</th>
-                                        <th class="py-3.5 px-4">NAMA TAMU</th>
-                                        <th class="py-3.5 px-4">EMAIL</th>
-                                        <th class="py-3.5 px-4">NO. KTP/SIM</th>
-                                        <th class="py-3.5 px-4">NO. HP/WA</th>
-                                        <th class="py-3.5 px-4 text-center">JUMLAH BOOKING</th>
-                                        <th class="py-3.5 px-4 text-right rounded-r-xl">TGL TERDAFTAR</th>
+                                        <th class="py-3 px-4">NAMA TAMU</th>
+                                        <th class="py-3 px-4">EMAIL</th>
+                                        <th class="py-3 px-4">KTP / SIM</th>
+                                        <th class="py-3 px-4">NO. HANDPHONE</th>
+                                        <th class="py-3 px-4 text-center">TOTAL BOOKING</th>
+                                        <th class="py-3 px-4 text-right">TERDAFTAR</th>
+                                        <th class="py-3 px-4 text-center">AKSI</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-stone-100 font-medium">
                                     <!-- Tampilkan Data Tamu Terdaftar -->
                                     @foreach ($guests as $guest)
                                         <tr class="hover:bg-stone-50 transition">
-                                            <td class="py-4 px-4 font-black text-stone-900">#{{ $guest->id }}</td>
                                             <td class="py-4 px-4 font-bold text-stone-900 font-serif text-sm">{{ $guest->name }}</td>
                                             <td class="py-4 px-4 text-stone-600 font-mono">{{ $guest->email }}</td>
                                             <td class="py-4 px-4 font-mono text-stone-700">{{ $guest->identity_number ?? '-' }}</td>
@@ -64,6 +63,20 @@
                                             </td>
                                             <td class="py-4 px-4 text-right text-stone-400 font-mono">
                                                 {{ $guest->created_at->format('d/m/Y H:i') }}
+                                            </td>
+                                            <td class="py-4 px-4 text-center">
+                                                <div class="inline-flex items-center space-x-1">
+                                                    <a href="{{ route('admin.guests.edit', $guest) }}" class="px-3 py-1.5 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-700 font-extrabold text-[10px] border border-amber-200 transition" title="Edit Akun Tamu">
+                                                        <i class="fa-solid fa-pen-to-square me-1"></i> Edit
+                                                    </a>
+                                                    <form action="{{ route('admin.guests.destroy', $guest) }}" method="POST" onsubmit="confirmAction(event, 'Hapus Data Tamu?', 'Apakah Anda yakin ingin menghapus data tamu {{ $guest->name }} dari database?', 'Ya, Hapus Tamu!');" class="inline">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="px-3 py-1.5 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-600 font-extrabold text-[10px] border border-rose-200 transition" title="Hapus Akun Tamu">
+                                                            <i class="fa-solid fa-trash me-1"></i> Hapus
+                                                        </button>
+                                                    </form>
+                                                </div>
                                             </td>
                                         </tr>
                                     @endforeach

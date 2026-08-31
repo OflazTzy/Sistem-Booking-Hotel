@@ -124,7 +124,7 @@
                                                             <a href="{{ route('rooms.edit', $room) }}" class="p-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs transition" title="Edit Kamar">
                                                                 <i class="fa-solid fa-pen-to-square"></i>
                                                             </a>
-                                                            <form action="{{ route('rooms.destroy', $room) }}" method="POST" class="inline" onsubmit="return confirm('Hapus kamar {{ $room->room_number }}?')">
+                                                            <form action="{{ route('rooms.destroy', $room) }}" method="POST" class="inline" onsubmit="confirmAction(event, 'Hapus Kamar?', 'Apakah Anda yakin ingin menghapus kamar {{ $room->room_number }} dari database?', 'Ya, Hapus!');">
                                                                 @csrf
                                                                 @method('DELETE')
                                                                 <button type="submit" class="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs transition" title="Hapus Kamar">
