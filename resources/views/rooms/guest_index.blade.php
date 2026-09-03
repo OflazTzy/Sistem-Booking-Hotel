@@ -45,6 +45,21 @@
             </div>
 
             <form action="{{ route('rooms.index') }}" method="GET" class="space-y-6">
+                <!-- Filter: Rentang Tanggal Booking -->
+                <div>
+                    <h4 class="text-xs font-bold text-stone-900 mb-2">Tanggal Menginap</h4>
+                    <div class="space-y-2">
+                        <div>
+                            <label class="text-[10px] font-bold text-stone-500 uppercase block mb-1">Check-in</label>
+                            <input type="date" name="check_in" value="{{ request('check_in') }}" onchange="this.form.submit()" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs font-bold text-stone-800 focus:outline-none focus:border-amber-700">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-stone-500 uppercase block mb-1">Check-out</label>
+                            <input type="date" name="check_out" value="{{ request('check_out') }}" onchange="this.form.submit()" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs font-bold text-stone-800 focus:outline-none focus:border-amber-700">
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Filter: Tipe Kamar -->
                 <div>
                     <h4 class="text-xs font-bold text-stone-900 mb-3">Tipe Kamar & Harga</h4>
@@ -70,16 +85,6 @@
                         <option value="desc" {{ request('sort') == 'desc' ? 'selected' : '' }}>Tertinggi (Descending)</option>
                     </select>
                 </div>
-
-                <!-- Filter: Bintang -->
-                <div class="border-t border-stone-100 pt-4">
-                    <h4 class="text-xs font-bold text-stone-900 mb-3">Bintang Hotel</h4>
-                    <div class="flex items-center space-x-2">
-                        <span class="px-3 py-1 rounded-lg bg-stone-100 text-stone-600 text-xs font-bold border cursor-pointer hover:bg-stone-200">3★</span>
-                        <span class="px-3 py-1 rounded-lg bg-stone-900 text-white text-xs font-bold shadow cursor-pointer">4★</span>
-                        <span class="px-3 py-1 rounded-lg bg-stone-100 text-stone-600 text-xs font-bold border cursor-pointer hover:bg-stone-200">5★</span>
-                    </div>
-                </div>
             </form>
         </div>
 
@@ -97,6 +102,9 @@
             </div>
         @else
             @foreach ($rooms as $room)
+                @php
+                    $isAvailableOnDates = $room->isAvailableForDates(request('check_in'), request('check_out'));
+                @endphp
                 <!-- Horizontal Ticket Card -->
                 <div class="bg-white rounded-3xl border border-stone-200/80 shadow-sm overflow-hidden grid grid-cols-1 md:grid-cols-12 hover:shadow-md transition">
                     
@@ -105,13 +113,13 @@
                         <img src="https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=600&q=80" alt="{{ $room->room_type }}" class="w-full h-full object-cover">
                         
                         <div class="absolute top-3 left-3">
-                            @if ($room->status === 'available')
+                            @if ($isAvailableOnDates)
                                 <span class="px-3 py-1 rounded-md bg-emerald-100/90 backdrop-blur-sm text-emerald-800 font-extrabold text-[10px] uppercase border border-emerald-200">
                                     AVAILABLE
                                 </span>
                             @else
                                 <span class="px-3 py-1 rounded-md bg-rose-100/90 backdrop-blur-sm text-rose-800 font-extrabold text-[10px] uppercase border border-rose-200">
-                                    OCCUPIED
+                                    TERISI / BENTROK
                                 </span>
                             @endif
                         </div>
@@ -155,13 +163,13 @@
                         </div>
 
                         <div class="w-full">
-                            @if($room->isAvailable())
-                                <a href="{{ route('rooms.show', $room) }}" class="w-full block py-2.5 px-4 rounded-full bg-[#8a6225] hover:bg-[#73501d] text-white font-extrabold text-xs text-center shadow transition">
-                                    LIHAT KAMAR
+                            @if($isAvailableOnDates)
+                                <a href="{{ route('bookings.create', ['room' => $room->id, 'check_in' => request('check_in'), 'check_out' => request('check_out')]) }}" class="w-full block py-2.5 px-4 rounded-full bg-[#8a6225] hover:bg-[#73501d] text-white font-extrabold text-xs text-center shadow transition">
+                                    PESAN KAMAR
                                 </a>
                             @else
                                 <button disabled class="w-full py-2.5 px-4 rounded-full bg-stone-200 text-stone-400 font-bold text-xs cursor-not-allowed">
-                                    TERISI
+                                    TERISI (BENTROK)
                                 </button>
                             @endif
                         </div>

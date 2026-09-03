@@ -15,15 +15,27 @@ use Illuminate\Http\Request;
 class RoomController extends Controller
 {
     /**
-     * Menampilkan daftar semua kamar.
+     * Menampilkan daftar semua kamar dengan pencarian dan filter rentang tanggal.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $rooms = Room::orderBy('room_number', 'asc')->get();
+        $checkIn  = $request->query('check_in');
+        $checkOut = $request->query('check_out');
+        $type     = $request->query('type');
+        $sort     = $request->query('sort', 'asc');
+
+        $query = Room::query();
+
+        if ($type) {
+            $query->where('room_type', $type);
+        }
+
+        $query->orderBy('price', $sort === 'desc' ? 'desc' : 'asc');
+        $rooms = $query->get();
 
         $roomTypes = ['Standard', 'Deluxe', 'Suite'];
 
-        return view('rooms.index', compact('rooms', 'roomTypes'));
+        return view('rooms.index', compact('rooms', 'roomTypes', 'checkIn', 'checkOut'));
     }
 
     /**

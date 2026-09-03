@@ -72,12 +72,22 @@ class BookingController extends Controller
      */
     public function create(Room $room)
     {
-        if (!$room->isAvailable()) {
-            return redirect()->route('rooms.index')
-                ->with('error', 'Kamar ' . $room->room_number . ' tidak tersedia untuk dibooking.');
+        $checkIn  = request('check_in');
+        $checkOut = request('check_out');
+
+        // Ambil daftar booking aktif pada kamar ini untuk disajikan di form
+        $activeBookings = $room->bookings()
+            ->where('status', '!=', 'cancelled')
+            ->where('check_out', '>=', Carbon::today()->toDateString())
+            ->orderBy('check_in', 'asc')
+            ->get();
+
+        // Pengecekan ketersediaan jika tanggal dimasukkan via query string
+        if ($checkIn && $checkOut && !$room->isAvailableForDates($checkIn, $checkOut)) {
+            session()->flash('error', 'Maaf, Kamar ' . $room->room_number . ' sudah dipesan orang lain pada tanggal ' . Carbon::parse($checkIn)->format('d M Y') . ' s/d ' . Carbon::parse($checkOut)->format('d M Y') . '. Silakan pilih tanggal lain yang masih kosong.');
         }
 
-        return view('bookings.create', compact('room'));
+        return view('bookings.create', compact('room', 'checkIn', 'checkOut', 'activeBookings'));
     }
 
     /**
@@ -124,10 +134,12 @@ class BookingController extends Controller
                     ->lockForUpdate()
                     ->firstOrFail();
 
-                // 2b. Cek ulang ketersediaan kamar SETELAH lock diperoleh
-                //     (mencegah race condition: dua request lolos cek awal bersamaan)
-                if (!$room->isAvailable()) {
-                    throw new \Exception('ROOM_NOT_AVAILABLE');
+                // 2b. Cek ketersediaan berdasarkan RENTANG TANGGAL (Overlap Check) SETELAH lock diperoleh.
+                //     Formula Overlap Hotel: (existing.check_in < new.check_out AND existing.check_out > new.check_in)
+                //     Alasan tanggal checkout lama (misal tgl 2) bisa dipakai checkout baru (tgl 2):
+                //     Perbandingan `2 > 2` bernilai FALSE, sehingga TIDAK bentrok dan kamar tetap bisa dipesan!
+                if (!$room->isAvailableForDates($validated['check_in'], $validated['check_out'])) {
+                    throw new \Exception('ROOM_DATE_CONFLICT');
                 }
 
                 // 2c. Update profil tamu
@@ -181,21 +193,30 @@ class BookingController extends Controller
                     'status'         => 'pending',
                 ]);
 
-                // 2h. Update status kamar menjadi occupied (di dalam transaksi)
-                $room->update(['status' => 'occupied']);
+                // 2h. Update status fisik kamar HANYA jika rentang booking mencakup hari ini (today)
+                $todayStr = Carbon::today()->toDateString();
+                if ($validated['check_in'] <= $todayStr && $validated['check_out'] >= $todayStr) {
+                    $room->update(['status' => 'occupied']);
+                }
 
                 return $booking;
             });
 
         } catch (\Exception $e) {
-            // Jika kamar sudah tidak tersedia (race condition terdeteksi)
-            if ($e->getMessage() === 'ROOM_NOT_AVAILABLE') {
-                return redirect()->route('rooms.index')
-                    ->with('error', 'Maaf, kamar ini baru saja dipesan oleh tamu lain. Silakan pilih kamar lain yang tersedia.');
+            $room = Room::find($validated['room_id']);
+            $roomNum = $room ? $room->room_number : '';
+            // Jika rentang tanggal kamar bentrok dengan booking aktif lain
+            if ($e->getMessage() === 'ROOM_DATE_CONFLICT' || $e->getMessage() === 'ROOM_NOT_AVAILABLE') {
+                $checkInFmt  = Carbon::parse($validated['check_in'])->format('d M Y');
+                $checkOutFmt = Carbon::parse($validated['check_out'])->format('d M Y');
+                return redirect()->back()
+                    ->withInput()
+                    ->with('error', 'Maaf, Kamar ' . $roomNum . ' sudah dipesan orang lain pada tanggal ' . $checkInFmt . ' s/d ' . $checkOutFmt . '. Silakan pilih tanggal lain yang masih kosong (misal tanggal 3 Sep 2026 dan seterusnya).');
             }
             // Error lainnya
-            return redirect()->route('rooms.index')
-                ->with('error', 'Terjadi kesalahan saat memproses booking. Silakan coba lagi.');
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Terjadi kesalahan saat memproses booking: ' . $e->getMessage());
         }
 
         // 3. Tulis log transaksi ke file (di luar transaksi DB)
@@ -362,6 +383,11 @@ class BookingController extends Controller
         ]);
 
         return DB::transaction(function () use ($validated, $booking) {
+            // Pengecekan overlap tanggal saat admin meng-edit reservasi
+            if ($booking->room && !$booking->room->isAvailableForDates($validated['check_in'], $validated['check_out'], $booking->id)) {
+                return back()->withErrors(['check_in' => 'Rentang tanggal check-in/out bentrok dengan booking aktif lain di kamar yang sama.'])->withInput();
+            }
+
             $totalNights = $this->calculateNights($validated['check_in'], $validated['check_out']);
             $roomPrice   = $booking->room ? $booking->room->price : 0;
             $lateFee     = (int) ($validated['late_fee'] ?? 0);
@@ -380,12 +406,15 @@ class BookingController extends Controller
                 'status'         => $validated['status'],
             ]);
 
-            // Kelola status kamar otomatis
+            // Kelola status fisik kamar secara dinamis
             if ($booking->room) {
                 if ($validated['status'] === 'cancelled') {
                     $booking->room->update(['status' => 'available']);
-                } elseif ($validated['status'] === 'active') {
-                    $booking->room->update(['status' => 'occupied']);
+                } else {
+                    $todayStr = Carbon::today()->toDateString();
+                    if ($validated['check_in'] <= $todayStr && $validated['check_out'] >= $todayStr) {
+                        $booking->room->update(['status' => 'occupied']);
+                    }
                 }
             }
 
@@ -401,7 +430,7 @@ class BookingController extends Controller
      */
     public function createOfflineBooking()
     {
-        $rooms = Room::where('status', 'available')->orderBy('room_number', 'asc')->get();
+        $rooms = Room::orderBy('room_number', 'asc')->get();
         $guests = User::where('role', 'user')->orderBy('name', 'asc')->get();
 
         return view('admin.bookings.create', compact('rooms', 'guests'));
@@ -450,11 +479,12 @@ class BookingController extends Controller
                 $guest = User::findOrFail($validated['guest_id']);
             }
 
-            // 2. Kunci kamar untuk mencegah double booking
+            // 2. Kunci kamar untuk mencegah double booking (Pessimistic Locking)
             $room = Room::where('id', $validated['room_id'])->lockForUpdate()->firstOrFail();
 
-            if (!$room->isAvailable()) {
-                return back()->withErrors(['room_id' => 'Kamar ini sedang diisi atau tidak tersedia.']);
+            // Pengecekan Overlap berdasarkan rentang tanggal
+            if (!$room->isAvailableForDates($validated['check_in'], $validated['check_out'])) {
+                return back()->withErrors(['room_id' => 'Maaf, Kamar ini sudah dibooking pada periode tanggal tersebut (' . $validated['check_in'] . ' s/d ' . $validated['check_out'] . ').'])->withInput();
             }
 
             // 3. Hitung malam & total harga
@@ -475,8 +505,11 @@ class BookingController extends Controller
                 'status'         => 'active', // Langsung terkonfirmasi/Lunas
             ]);
 
-            // 5. Ubah status kamar menjadi occupied
-            $room->update(['status' => 'occupied']);
+            // 5. Ubah status fisik kamar HANYA jika rentang booking mencakup hari ini (today)
+            $todayStr = Carbon::today()->toDateString();
+            if ($validated['check_in'] <= $todayStr && $validated['check_out'] >= $todayStr) {
+                $room->update(['status' => 'occupied']);
+            }
 
             $this->writeLog('OFFLINE BOOKING RESEPSIONIS: ' . $booking->booking_code . ' untuk ' . $guest->name);
 

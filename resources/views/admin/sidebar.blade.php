@@ -41,7 +41,13 @@
                 <span>Tamu</span>
             </a>
 
-            <!-- 5. Pengelola Admin -->
+            <!-- 5. Laporan & Rekapan Keuangan Bulanan -->
+            <a href="{{ route('admin.reports.index') }}" class="w-full flex items-center space-x-3 px-4 py-3 rounded-2xl transition {{ request()->routeIs('admin.reports.*') ? 'bg-white/10 text-white font-extrabold shadow-sm' : 'text-stone-400 hover:text-white hover:bg-white/5' }}">
+                <i class="fa-solid fa-file-invoice-dollar w-4 {{ request()->routeIs('admin.reports.*') ? 'text-emerald-400' : '' }}"></i>
+                <span>Laporan & Rekapan</span>
+            </a>
+
+            <!-- 6. Pengelola Admin -->
             <a href="{{ route('admin.admins.index') }}" class="w-full flex items-center space-x-3 px-4 py-3 rounded-2xl transition {{ request()->routeIs('admin.admins.*') ? 'bg-white/10 text-white font-extrabold shadow-sm' : 'text-stone-400 hover:text-white hover:bg-white/5' }}">
                 <i class="fa-solid fa-user-shield w-4 {{ request()->routeIs('admin.admins.*') ? 'text-emerald-400' : '' }}"></i>
                 <span>Pengelola Admin</span>

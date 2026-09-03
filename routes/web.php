@@ -71,6 +71,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/admin/bookings/{booking}/edit', [BookingController::class, 'edit'])->name('admin.bookings.edit');
         Route::put('/admin/bookings/{booking}', [BookingController::class, 'update'])->name('admin.bookings.update');
 
+        // Laporan & Rekapan Keuangan Bulanan Admin
+        Route::get('/admin/reports', [\App\Http\Controllers\ReportController::class, 'index'])->name('admin.reports.index');
+        Route::get('/admin/reports/pdf', [\App\Http\Controllers\ReportController::class, 'pdf'])->name('admin.reports.pdf');
+
         // Admin Management & Guests List (Tambah & Kelola Tamu)
         Route::get('/admin/guests', [UserController::class, 'guests'])->name('admin.guests.index');
         Route::get('/admin/guests/create', [UserController::class, 'createGuest'])->name('admin.guests.create');
